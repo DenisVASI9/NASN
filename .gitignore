@@ -1,0 +1,12 @@
+frontend/node_modules
+frontend/.idea
+frontend/.vscode
+gateway/node_modules
+gateway/.idea
+gateway/.vscode
+microservice/node_modules
+microservice/.idea
+microservice/.vscode
+
+.idea
+.vscode

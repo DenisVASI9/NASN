@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package hello;
+
+service HelloService {
+  rpc Hello(HelloRequest) returns (HelloResponse);
+  rpc ExceptionCase(HelloRequest) returns (HelloResponse);
+  rpc BadInputDataCase(HelloRequest) returns (HelloResponse);
+  rpc BadOutputDataCase(HelloRequest) returns (HelloResponse);
+  rpc FewPromisesErrorCase(HelloRequest) returns (HelloResponse);
+  rpc ReturnedCallbackError(HelloRequest) returns (HelloResponse);
+  rpc ExecutableInsideCallbackError(HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloResponse {
+  string greeting = 1;
+}
