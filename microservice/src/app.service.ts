@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { CommonService } from "./common.service";
+import { CommonService, CommonServiceError } from "./common.service";
+import * as TE from "fp-ts/TaskEither";
+import * as E from "fp-ts/Either";
+
+export class AppServiceError extends Error {
+  name = 'AppServiceError'
+}
 
 @Injectable()
 export class AppService {
@@ -15,13 +21,27 @@ export class AppService {
 
   // TODO: Problem 2
   // Как нам обработать все возможные ошибка в этом методе
-  exceptionCase(data: {name: string}): { greeting: string } {
+  exceptionCase(data: {name: string}): E.Either<unknown, { greeting: string }> {
 
-    throw new Error("Error for test")
+    /*
+    Представим, что у нас есть какая-то неизвестная функция,
+    обернем ее в вызов tryCatch из пакета Either, чтобы сделать безопасной.
+    Важно: если появится Promise - следует использовать TaskEither, потому что tryCatch
+    завершение промиса.
 
-    return {
-      greeting: `hello, ${data.name}!`
+    export const tryCatch = <E, A>(f: Lazy<A>, onThrow: (e: unknown) => E): Either<E, A> => {
+      try {
+        return right(f())
+      } catch (e) {
+        return left(onThrow(e))
+      }
     }
+    */
+    const nameEither = E.tryCatch(() => this.common.someFunctionThatReturnsError(true), (e) => e)
+
+    return E.match((e) => E.left(e), (name) => E.right({
+      greeting: `hello, ${name}!`
+    }))(nameEither)
   }
 
   // TODO: Problem 4

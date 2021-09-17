@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
 
+export class CommonServiceError extends Error {
+  name = 'CommonServiceError'
+}
+
 @Injectable()
 export class CommonService {
   async throwablePromise(): Promise<number> {
@@ -13,6 +17,15 @@ export class CommonService {
       reject('Reject promise')
       return 1;
     })
+  }
+
+  someFunctionThatReturnsError(error = false) {
+    if (error) {
+      throw new CommonServiceError("Error for test")
+    }
+    else {
+      return "Sir"
+    }
   }
 
   executeCallback(callback) {

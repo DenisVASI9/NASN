@@ -1,6 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
 import { GrpcMethod } from "@nestjs/microservices";
+import { pipe } from "fp-ts/function";
+import { match } from "fp-ts/Either";
 
 // Тестироваллось в BloomRPC
 @Controller()
@@ -25,7 +27,15 @@ export class AppController {
   */
   @GrpcMethod("HelloService", "ExceptionCase")
   exceptionCase(data: {name: string}): { greeting: string } {
-    return this.appService.exceptionCase(data);
+    const either = this.appService.exceptionCase(data);
+    console.log(
+      match((error) => {
+        console.log(error)
+      }, (data) => {
+        console.log(data);
+      })(either)
+    )
+    return null as any;
   }
 
   // TODO: Problem 3
