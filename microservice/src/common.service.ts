@@ -1,18 +1,21 @@
 import { Injectable } from "@nestjs/common";
 
+// Методы в этом классе переписывать нельзя - они имитируют внешние небезопасне функции
+
 export class CommonServiceError extends Error {
   name = 'CommonServiceError'
 }
 
 @Injectable()
 export class CommonService {
-  async throwablePromise(): Promise<number> {
-    console.log('throw')
-    throw new Error('Throw promise')
-    return 1
+  async throwablePromise(error = false): Promise<string> {
+    if (error) {
+      throw new Error('Throw promise')
+    }
+    return "Sir"
   }
 
-  async throwablePromiseConstructor(): Promise<number> {
+  async throwablePromiseConstructor(error = false): Promise<number> {
     return new Promise((resolve, reject) => {
       reject('Reject promise')
       return 1;
