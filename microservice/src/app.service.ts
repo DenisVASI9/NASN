@@ -21,7 +21,7 @@ export class AppService {
 
   // TODO: Problem 2
   // Как нам обработать все возможные ошибка в этом методе
-  exceptionCase(data: {name: string}): E.Either<unknown, { greeting: string }> {
+  exceptionCase(data: {name: string}, error = true): E.Either<unknown, { greeting: string }> {
 
     /*
     Представим, что у нас есть какая-то неизвестная функция,
@@ -36,8 +36,11 @@ export class AppService {
         return left(onThrow(e))
       }
     }
+
+    Использование этого паттерна создает приятный еффект в виде сохранения изначальной
+    ошибки на верхнем уровне приложения и возможности ее обработать
     */
-    const nameEither = E.tryCatch(() => this.common.someFunctionThatReturnsError(true), (e) => e)
+    const nameEither = E.tryCatch(() => this.common.someFunctionThatReturnsError(error), (e) => e)
 
     return E.match((e) => E.left(e), (name) => E.right({
       greeting: `hello, ${name}!`

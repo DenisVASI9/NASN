@@ -1,8 +1,27 @@
-import { Controller } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller } from "@nestjs/common";
+import { AppService } from "./app.service";
 import { GrpcMethod } from "@nestjs/microservices";
-import { pipe } from "fp-ts/function";
-import { match } from "fp-ts/Either";
+import { Either, getOrElseW } from "fp-ts/Either";
+
+/* Декоратор для распаковки Either и порождения exception в случае left сценария.
+   Необходим потому что nest на всех уровнях работает с концепцией Exception
+*/
+
+export function FoldEither<E, A>() {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    let originalMethod = descriptor.value;
+    descriptor.value = function (...args: any[]) {
+      const either: Either<E, A> = originalMethod.apply(this, args);
+      return getOrElseW((error) => {
+        throw error
+      })(either)
+    }
+  }
+}
+
+function castEither<E, A>(either: Either<E, A>): A {
+  return getOrElseW((error) => {throw error})(either);
+}
 
 // Тестироваллось в BloomRPC
 @Controller()
@@ -25,17 +44,18 @@ export class AppController {
     "error": "<Вменяемый статус>: <Сообщение об ошибке>"
     }
   */
+
+  // Этот вариант интересный, но плох тем, что меняет выходящий типа неявным образом
+  // @GrpcMethod("HelloService", "ExceptionCase")
+  // @FoldEither()
+  // exceptionCase(data: {name: string}): Either<unknown, { greeting: string }>{
+  //   return this.appService.exceptionCase(data);
+  // }
+
+  // Не так красиво, зато не ломает typescript
   @GrpcMethod("HelloService", "ExceptionCase")
   exceptionCase(data: {name: string}): { greeting: string } {
-    const either = this.appService.exceptionCase(data);
-    console.log(
-      match((error) => {
-        console.log(error)
-      }, (data) => {
-        console.log(data);
-      })(either)
-    )
-    return null as any;
+    return castEither(this.appService.exceptionCase(data));
   }
 
   // TODO: Problem 3
