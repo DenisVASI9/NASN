@@ -7,7 +7,7 @@ import { Either, getOrElseW } from "fp-ts/Either";
    Необходим потому что nest на всех уровнях работает с концепцией Exception
 */
 
-export function FoldEither<E, A>() {
+export function CastEither<E, A>() {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     let originalMethod = descriptor.value;
     descriptor.value = function (...args: any[]) {
@@ -19,8 +19,10 @@ export function FoldEither<E, A>() {
   }
 }
 
-function castEither<E, A>(either: Either<E, A>): A {
-  return getOrElseW((error) => {throw error})(either);
+function castEither<E, A>(either: Either<E, A> | Promise<Either<E, A>>): Promise<A> {
+  return Promise.resolve(either).then((either) => {
+    return getOrElseW((error) => {throw error})(either);
+  })
 }
 
 // Тестироваллось в BloomRPC
@@ -45,16 +47,18 @@ export class AppController {
     }
   */
 
-  // Этот вариант интересный, но плох тем, что меняет выходящий типа неявным образом
+  // Этот вариант интересный, но плох тем, что меняет выходящий тип неявным образом,
+  // В итоге с инструментами типа ts-proto, которые генерируют типы контроллера от
+  // .proto файла окажется несовместим
   // @GrpcMethod("HelloService", "ExceptionCase")
-  // @FoldEither()
+  // @CastEither()
   // exceptionCase(data: {name: string}): Either<unknown, { greeting: string }>{
   //   return this.appService.exceptionCase(data);
   // }
 
   // Не так красиво, зато не ломает typescript
   @GrpcMethod("HelloService", "ExceptionCase")
-  exceptionCase(data: {name: string}): { greeting: string } {
+  exceptionCase(data: {name: string}): Promise<{ greeting: string }> {
     return castEither(this.appService.exceptionCase(data));
   }
 
@@ -102,8 +106,8 @@ export class AppController {
   }
   */
   @GrpcMethod("HelloService", "FewPromisesErrorCase")
-  fewPromisesErrorCase(data: {name: string}): Promise<{ greeting: string }> {
-    return this.appService.fewPromisesErrorCase(data);
+  async fewPromisesErrorCase(data: {name: string}): Promise<{ greeting: string }> {
+    return castEither(await this.appService.fewPromisesErrorCase(data));
   }
 
   // TODO: Problem 8

@@ -2,10 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { CommonService, CommonServiceError } from "./common.service";
 import * as TE from "fp-ts/TaskEither";
 import * as E from "fp-ts/Either";
-
-export class AppServiceError extends Error {
-  name = 'AppServiceError'
-}
+import { pipe } from "fp-ts/function";
+import { Either } from "fp-ts/Either";
 
 @Injectable()
 export class AppService {
@@ -68,17 +66,28 @@ export class AppService {
     }
   }
 
+  // Оборачиваем асинхронную функцию в tryCatch от TaskEither, чтобы потом использовать ее в chain с другими функциями
+
   // TODO: Problem 7
   // Как обработать ошибку в группе в группе вызовов асинхронных функций
-  async fewPromisesErrorCase(data: {name: string}): Promise<{ greeting: string }> {
-    await this.common.throwablePromiseConstructor()
-    await this.common.throwablePromise()
-    await this.common.throwablePromiseConstructor()
-    await this.common.throwablePromise()
-    return {
-      greeting: undefined
-    }
+  async fewPromisesErrorCase(data: {name: string}): Promise<Either<unknown, { greeting: string }>> {
+    const eName = await this.fewPromisesErrorCasePipe()
+    return E.match(
+      (e) => E.left(e),
+      (name) => E.right({ greeting: `Hello ${name}`})
+    )(eName)
   }
+
+  fewPromisesErrorCasePipe = pipe(
+    TE.tryCatch(() => this.common.throwablePromiseConstructor(), (e) => new CommonServiceError(`Failed, because ${e}`)),
+    TE.chain(
+      () => TE.tryCatch(() => this.common.throwablePromiseConstructor(), (e) => new CommonServiceError(`Failed, because ${e}`))
+    ),
+    TE.chain(
+      () => TE.tryCatch(() => this.common.throwablePromiseConstructor(), (e) => new CommonServiceError(`Failed, because ${e}`))
+    ),
+    () => TE.tryCatch(() => this.common.throwablePromiseConstructor(), (e) => new CommonServiceError(`Failed, because ${e}`))
+  )
 
   // TODO: Problem 9
   // Как обработать ошибки внутри callback, который возвращается внутри executeCallback

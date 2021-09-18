@@ -15,10 +15,12 @@ export class CommonService {
     return "Sir"
   }
 
-  async throwablePromiseConstructor(error = false): Promise<number> {
+  async throwablePromiseConstructor(error = false): Promise<string> {
     return new Promise((resolve, reject) => {
-      reject('Reject promise')
-      return 1;
+      if (error) {
+        reject('Reject promise')
+      }
+      resolve("Sir")
     })
   }
 
